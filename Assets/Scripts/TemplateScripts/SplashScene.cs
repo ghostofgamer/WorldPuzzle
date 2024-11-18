@@ -18,7 +18,7 @@ public class SplashScene : MonoBehaviour {
 	// Use this for initialization
 	void Start ()
 	{
-		CheckForGDPR();
+		// CheckForGDPR();
 			//		if(PlayerPrefs.HasKey("TutorialCompleted"))
 			//		{
 			sceneToLoad = "MainScene";

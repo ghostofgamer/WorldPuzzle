@@ -47,7 +47,7 @@ public class DailyReward : MonoBehaviour
 
     private void Start()
     {
-        StartCoroutine(RewardStateUpdater());
+        // StartCoroutine(RewardStateUpdater());
     }
 
     private IEnumerator RewardStateUpdater()

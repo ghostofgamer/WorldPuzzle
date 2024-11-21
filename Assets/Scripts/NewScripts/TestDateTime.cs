@@ -63,7 +63,7 @@ public class TestDateTime : MonoBehaviour
                     CheckButtonAvailability();
                 }
 
-                Debug.Log(DateTime.Now - tim);
+                // Debug.Log(DateTime.Now - tim);
             }
             else
             {
@@ -100,12 +100,12 @@ public class TestDateTime : MonoBehaviour
                 {
                     if (i == currentStreak && DateTime.Now - tim >= TimeSpan.FromHours(24))
                     {
-                        Debug.Log("CURRENTSTREAK " + currentStreak);
+                        // Debug.Log("CURRENTSTREAK " + currentStreak);
                         buttons[i].interactable = true;
                     }
                     else
                     {
-                        Debug.Log("ELSE " + currentStreak);
+                        // Debug.Log("ELSE " + currentStreak);
                         buttons[i].interactable = false;
                     }
                 }

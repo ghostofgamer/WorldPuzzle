@@ -8,189 +8,205 @@ using System.Xml.Linq;
 using System.Linq;
 using UnityEngine.UI;
 
-public class LevelsParser : MonoBehaviour {
+public class LevelsParser : MonoBehaviour
+{
+    [SerializeField] private LevelProgressManager _levelProgressManager;
 
-	// Promenljiva u kojoj cemo da cuvamo podatke iz xmla
-	public XmlDocument xmlDocument;
-	public XmlNodeList packs;
+    public Transform packsHolder;
+    public static int CurrentPack;
+    public static int CurrentWorld;
+    public static int CurrentLevel;
 
-	// Poslednji otkljucani nivo
-	public int lastUnlockedPack;
-	public int lastUnlockedWorld;
-	public int lastUnlockedLevel;
+    // Promenljiva u kojoj cemo da cuvamo podatke iz xmla
+    public XmlDocument xmlDocument;
+    public XmlNodeList packs;
 
-	// Izabrani nivo za gameplay
-	public static int selectedPack;
-	public static int selectedWorld;
-	public static int selectedLevel;
+    // Poslednji otkljucani nivo
+    public int lastUnlockedPack;
+    public int lastUnlockedWorld;
+    public int lastUnlockedLevel;
 
-	// Prefabovi za pack, world i level
-	public GameObject packPrefab;
-	public GameObject worldTabPrefab;
-	public GameObject levelPrefab;
+    // Izabrani nivo za gameplay
+    public static int selectedPack;
+    public static int selectedWorld;
+    public static int selectedLevel;
 
-	public static LevelsParser levelParser;
+    // Prefabovi za pack, world i level
+    public GameObject packPrefab;
+    public GameObject worldTabPrefab;
+    public GameObject levelPrefab;
 
-	void Awake()
-	{
-		xmlDocument = new XmlDocument();
-		TextAsset xmlData = new TextAsset();
-		xmlData = Resources.Load("WordLine") as TextAsset;
+    public static LevelsParser levelParser;
 
-		xmlDocument.LoadXml(xmlData.text);
+    void Awake()
+    {
+        xmlDocument = new XmlDocument();
+        TextAsset xmlData = new TextAsset();
+        xmlData = Resources.Load("WordLine") as TextAsset;
 
-		packs = xmlDocument.SelectNodes("/xml/category");
+        xmlDocument.LoadXml(xmlData.text);
 
-		if (GlobalVariables.stars == 0)
-		{
-			lastUnlockedPack = 0;
-			lastUnlockedWorld = 0;
-			lastUnlockedLevel = 0;
+        packs = xmlDocument.SelectNodes("/xml/category");
 
-			if (!PlayerPrefs.HasKey("LastUnlockedPack"))
-				PlayerPrefs.SetInt("LastUnlockedPack", 0);
+        if (GlobalVariables.stars == 0)
+        {
+            lastUnlockedPack = 0;
+            lastUnlockedWorld = 0;
+            lastUnlockedLevel = 0;
 
-			if (!PlayerPrefs.HasKey("LastUnlockedWorld"))
-				PlayerPrefs.SetInt("LastUnlockedWorld", 0);
+            if (!PlayerPrefs.HasKey("LastUnlockedPack"))
+                PlayerPrefs.SetInt("LastUnlockedPack", 0);
 
-			if (!PlayerPrefs.HasKey("LastUnlockedLevel"))
-				PlayerPrefs.SetInt("LastUnlockedLevel", 0);
-		}
-		else
-		{
-			lastUnlockedPack = PlayerPrefs.GetInt("LastUnlockedPack");
-			lastUnlockedWorld = PlayerPrefs.GetInt("LastUnlockedWorld");
-			lastUnlockedLevel = PlayerPrefs.GetInt("LastUnlockedLevel");
-		}
-			
-		levelParser = this;
-		DontDestroyOnLoad(this);
-	}
+            if (!PlayerPrefs.HasKey("LastUnlockedWorld"))
+                PlayerPrefs.SetInt("LastUnlockedWorld", 0);
 
-	public void SetPackWorlds()
-	{
-		// Pronalazimo objekat koji sadrzi packove
-		Transform packsHolder = GameObject.Find("WorldPacksHolder").transform;
+            if (!PlayerPrefs.HasKey("LastUnlockedLevel"))
+                PlayerPrefs.SetInt("LastUnlockedLevel", 0);
+        }
+        else
+        {
+            lastUnlockedPack = PlayerPrefs.GetInt("LastUnlockedPack");
+            lastUnlockedWorld = PlayerPrefs.GetInt("LastUnlockedWorld");
+            lastUnlockedLevel = PlayerPrefs.GetInt("LastUnlockedLevel");
+        }
 
-		// Za svaki pack prolazimo kroz sve svetove
-		for (int i = 0; i < packs.Count; i++)
-		{
-			// Kreiramo holder za pack
-			GameObject newPack = Instantiate(packPrefab, packsHolder) as GameObject;
-			newPack.transform.localScale = Vector3.one;
+        levelParser = this;
+        DontDestroyOnLoad(this);
+    }
 
-			// Prolazimo kroz svaki svet
-			for (int j = 0; j < packs[i].ChildNodes.Count; j++)
-			{
-				int numberOfStarsForThisWorld = 0;
+    public void SetPackWorlds()
+    {
+        // Pronalazimo objekat koji sadrzi packove
+        Transform packsHolder = GameObject.Find("WorldPacksHolder").transform;
 
-				// Kreiramo tab za svaki svet iz ovog packa, takodje stavljamo i listener za pokretanje ovog sveta
-				GameObject newWorld = Instantiate(worldTabPrefab, newPack.transform.GetChild(0).transform) as GameObject;
-				newWorld.transform.localScale = Vector3.one;
+        // Za svaki pack prolazimo kroz sve svetove
+        for (int i = 0; i < packs.Count; i++)
+        {
+            // Kreiramo holder za pack
+            GameObject newPack = Instantiate(packPrefab, packsHolder) as GameObject;
+            newPack.transform.localScale = Vector3.one;
 
-				// Proveravamo da li je pack poslednji otkljucani
-				if (i == lastUnlockedPack)
-				{
-					if (j > lastUnlockedWorld)
-					{
-						// Nije otkljucan, stavljamo transparenciju za ovaj tab
-						newWorld.GetComponent<CanvasGroup>().alpha = 0.3f;
-					}
-					else if (j < lastUnlockedWorld) // 
-					{
-						newWorld.transform.Find("AnimationHolder/BadgeImage").gameObject.SetActive(true);
-					}
-				}
-				else if (i > lastUnlockedPack) //
-				{
-					// Ovde su svi nivoi sigurno zakljucani
-					newWorld.GetComponent<CanvasGroup>().alpha = 0.3f;
-				}
-				else // Ostaju nam samo otkljucani packovi
-				{
-					// Ovde su svi nivoi otklucani pa im prikazujemo badgeve
-					newWorld.transform.Find("AnimationHolder/BadgeImage").gameObject.SetActive(true);
-				}
+            // Prolazimo kroz svaki svet
+            for (int j = 0; j < packs[i].ChildNodes.Count; j++)
+            {
+                int numberOfStarsForThisWorld = 0;
 
-				// Setujemo indexe za klick na odabrani world
-				newWorld.transform.GetChild(1).GetComponent<WorldLevelScript>().packIndex = i;
-				newWorld.transform.GetChild(1).GetComponent<WorldLevelScript>().worldIndex = j;
+                // Kreiramo tab za svaki svet iz ovog packa, takodje stavljamo i listener za pokretanje ovog sveta
+                GameObject newWorld =
+                    Instantiate(worldTabPrefab, newPack.transform.GetChild(0).transform) as GameObject;
+                newWorld.transform.localScale = Vector3.one;
 
-				// Setujemo ime sveta i ponudjena slova
-				newWorld.transform.Find("AnimationHolder/WorldName").GetComponent<Text>().text = packs[i].ChildNodes[j].Attributes["title"].Value;
-				newWorld.transform.Find("AnimationHolder/LetterNumberText").GetComponent<Text>().text = packs[i].ChildNodes[j].Attributes["maxletters"].Value + " letters max";
+                // Proveravamo da li je pack poslednji otkljucani
+                if (i == lastUnlockedPack)
+                {
+                    if (j > lastUnlockedWorld)
+                    {
+                        // Nije otkljucan, stavljamo transparenciju za ovaj tab
+                        newWorld.GetComponent<CanvasGroup>().alpha = 0.3f;
+                    }
+                    else if (j < lastUnlockedWorld) // 
+                    {
+                        newWorld.transform.Find("AnimationHolder/BadgeImage").gameObject.SetActive(true);
+                    }
+                }
+                else if (i > lastUnlockedPack) //
+                {
+                    // Ovde su svi nivoi sigurno zakljucani
+                    newWorld.GetComponent<CanvasGroup>().alpha = 0.3f;
+                }
+                else // Ostaju nam samo otkljucani packovi
+                {
+                    // Ovde su svi nivoi otklucani pa im prikazujemo badgeve
+                    newWorld.transform.Find("AnimationHolder/BadgeImage").gameObject.SetActive(true);
+                }
 
-				// Racunamo broj zvezdica za ovaj svet
-				for (int k = 0; k < packs[i].ChildNodes[j].ChildNodes.Count; k++)
-				{
-					numberOfStarsForThisWorld += packs[i].ChildNodes[j].ChildNodes[k].SelectSingleNode("words").InnerText.Split(',').Length;
-				}
+                // Setujemo indexe za klick na odabrani world
+                newWorld.transform.GetChild(1).GetComponent<WorldLevelScript>().packIndex = i;
+                newWorld.transform.GetChild(1).GetComponent<WorldLevelScript>().worldIndex = j;
 
-				newWorld.transform.Find("AnimationHolder/StarNumber").GetComponent<Text>().text = (numberOfStarsForThisWorld - 2).ToString();
+                // Setujemo ime sveta i ponudjena slova
+                newWorld.transform.Find("AnimationHolder/WorldName").GetComponent<Text>().text =
+                    packs[i].ChildNodes[j].Attributes["title"].Value;
+                newWorld.transform.Find("AnimationHolder/LetterNumberText").GetComponent<Text>().text =
+                    packs[i].ChildNodes[j].Attributes["maxletters"].Value + " letters max";
 
-				// Dodajemo native ad ako je poslednji element iz ovog sveta
+                // Racunamo broj zvezdica za ovaj svet
+                for (int k = 0; k < packs[i].ChildNodes[j].ChildNodes.Count; k++)
+                {
+                    numberOfStarsForThisWorld += packs[i].ChildNodes[j].ChildNodes[k].SelectSingleNode("words")
+                        .InnerText.Split(',').Length;
+                }
+
+                newWorld.transform.Find("AnimationHolder/StarNumber").GetComponent<Text>().text =
+                    (numberOfStarsForThisWorld - 2).ToString();
+
+                // Dodajemo native ad ako je poslednji element iz ovog sveta
 //				if (j == packs[i].ChildNodes.Count - 1 && !GlobalVariables.removeAdsOwned)
 //				{
 //					GameObject nativeAd = Instantiate(nativeAdPrefab , newPack.transform.GetChild(0).transform) as GameObject;
 //					nativeAd.transform.localScale = Vector3.one;
 //					LevelSelectManager.levelSelectManager.listOfNativeAds.Add(nativeAd);
 //				}
-			}
+            }
 
-			// Setujemo ime packa
-			newPack.transform.Find("Tabs/TitleHolder").GetComponent<Text>().text = packs[i].Attributes["name"].Value;
+            // Setujemo ime packa
+            newPack.transform.Find("Tabs/TitleHolder").GetComponent<Text>().text = packs[i].Attributes["name"].Value;
 
-			// Ako je ceo pack predjen onda prikazujemo i badge za njega
-			if (i < lastUnlockedPack)
-				newPack.transform.Find("Tabs/TitleHolder/WorldCompletedHolder").gameObject.SetActive(true);
+            // Ako je ceo pack predjen onda prikazujemo i badge za njega
+            if (i < lastUnlockedPack)
+                newPack.transform.Find("Tabs/TitleHolder/WorldCompletedHolder").gameObject.SetActive(true);
 
-			newPack.GetComponent<RectTransform>().anchoredPosition3D = new Vector3(newPack.GetComponent<RectTransform>().anchoredPosition3D.x, newPack.GetComponent<RectTransform>().anchoredPosition3D.y, 0f);
-		}
+            newPack.GetComponent<RectTransform>().anchoredPosition3D = new Vector3(
+                newPack.GetComponent<RectTransform>().anchoredPosition3D.x,
+                newPack.GetComponent<RectTransform>().anchoredPosition3D.y, 0f);
+        }
 
-		// Setujemo tabove nakon zavrsenog frejma
-		StartCoroutine(SetTabsAppropriately(packsHolder));
-	}
+        // Setujemo tabove nakon zavrsenog frejma
+        StartCoroutine(SetTabsAppropriately(packsHolder));
+    }
 
-	public void SetTabs(Transform packsHolder)
-	{
-		StartCoroutine(SetTabsAppropriately(packsHolder));
-	}
+    public void SetTabs(Transform packsHolder)
+    {
+        StartCoroutine(SetTabsAppropriately(packsHolder));
+    }
 
-	IEnumerator SetTabsAppropriately(Transform packsHolder)
-	{
-		yield return new WaitForEndOfFrame();
+    IEnumerator SetTabsAppropriately(Transform packsHolder)
+    {
+        yield return new WaitForEndOfFrame();
 
-		for (int i = 0; i < packsHolder.childCount; i++)
-		{
-			packsHolder.GetChild(i).GetComponent<RectTransform>().sizeDelta = new Vector2(packsHolder.GetChild(i).GetComponent<RectTransform>().sizeDelta.x, packsHolder.GetChild(i).GetChild(0).GetComponent<RectTransform>().sizeDelta.y);
-		}
+        for (int i = 0; i < packsHolder.childCount; i++)
+        {
+            packsHolder.GetChild(i).GetComponent<RectTransform>().sizeDelta = new Vector2(
+                packsHolder.GetChild(i).GetComponent<RectTransform>().sizeDelta.x,
+                packsHolder.GetChild(i).GetChild(0).GetComponent<RectTransform>().sizeDelta.y);
+        }
 
-		packsHolder.GetComponent<ContentSizeFitter>().enabled = false;
-		packsHolder.GetComponent<ContentSizeFitter>().enabled = true;
+        packsHolder.GetComponent<ContentSizeFitter>().enabled = false;
+        packsHolder.GetComponent<ContentSizeFitter>().enabled = true;
 
-		//transform.parent.GetComponent<ScrollRect>().verticalNormalizedPosition = 1;
+        //transform.parent.GetComponent<ScrollRect>().verticalNormalizedPosition = 1;
 
-		yield return new WaitForEndOfFrame();
+        yield return new WaitForEndOfFrame();
 
-		// Pozicioniranje scrollrecta na poslednje izabrani nivo/svet FIXME ovde treba da se napravi da se pozicionira 
-		if (packsHolder.name == "LevelPacksHolder")
-		{
-			// Stavljam offset 200 cisto da pomerim na dole jos malo scroll rect
-			if (selectedPack == lastUnlockedPack && selectedWorld == lastUnlockedWorld)
-			{
-				SnapTo(packsHolder.GetChild(0).GetChild(0).GetChild(selectedLevel + 1).GetComponent<RectTransform>(), 
-					packsHolder.GetComponent<RectTransform>(), packsHolder.parent.GetComponent<ScrollRect>());
+        // Pozicioniranje scrollrecta na poslednje izabrani nivo/svet FIXME ovde treba da se napravi da se pozicionira 
+        if (packsHolder.name == "LevelPacksHolder")
+        {
+            // Stavljam offset 200 cisto da pomerim na dole jos malo scroll rect
+            if (selectedPack == lastUnlockedPack && selectedWorld == lastUnlockedWorld)
+            {
+                SnapTo(packsHolder.GetChild(0).GetChild(0).GetChild(selectedLevel + 1).GetComponent<RectTransform>(),
+                    packsHolder.GetComponent<RectTransform>(), packsHolder.parent.GetComponent<ScrollRect>());
 //				packsHolder.GetComponent<RectTransform>().anchoredPosition = new Vector2(packsHolder.GetComponent<RectTransform>().anchoredPosition.x, packsHolder.GetChild(0).GetChild(0).GetChild(selectedLevel + 1).GetComponent<RectTransform>().anchoredPosition.y - packsHolder.GetChild(0).GetChild(0).GetChild(selectedLevel + 1).GetComponent<RectTransform>().sizeDelta.y / 2f - packsHolder.GetComponent<VerticalLayoutGroup>().spacing + 200f);
-			}
-			else
-			{
-				packsHolder.GetComponent<RectTransform>().anchoredPosition = new Vector2(packsHolder.GetComponent<RectTransform>().anchoredPosition.x, -packsHolder.GetComponent<RectTransform>().sizeDelta.y / 2 + 200f);
-			}
-
-
-		}
-		else if (packsHolder.name == "WorldPacksHolder")
-		{
+            }
+            else
+            {
+                packsHolder.GetComponent<RectTransform>().anchoredPosition = new Vector2(
+                    packsHolder.GetComponent<RectTransform>().anchoredPosition.x,
+                    -packsHolder.GetComponent<RectTransform>().sizeDelta.y / 2 + 200f);
+            }
+        }
+        else if (packsHolder.name == "WorldPacksHolder")
+        {
 //			packsHolder.GetComponent<RectTransform>().anchoredPosition = new Vector2(packsHolder.GetComponent<RectTransform>().anchoredPosition.x, (packsHolder.GetChild(selectedPack).GetComponent<RectTransform>().anchoredPosition.y - packsHolder.GetComponent<RectTransform>().sizeDelta.y / 2 + packsHolder.GetChild(selectedPack).GetChild(0).GetChild(selectedWorld + 1).GetComponent<RectTransform>().anchoredPosition.y));
 //			packsHolder.GetComponent<RectTransform>().anchoredPosition = new Vector2(packsHolder.GetComponent<RectTransform>().anchoredPosition.x, 
 //				packsHolder.GetComponent<RectTransform>().sizeDelta.y / 2f
@@ -199,88 +215,187 @@ public class LevelsParser : MonoBehaviour {
 //				+ packsHolder.GetChild(selectedPack).GetComponent<RectTransform>().sizeDelta.y / 2f
 //				+ packsHolder.GetChild(selectedPack).GetChild(0).GetChild(selectedWorld).GetComponent<RectTransform>().sizeDelta.y / 2f
 //				+ packsHolder.GetComponent<VerticalLayoutGroup>().spacing);
-			SnapTo(packsHolder.GetChild(selectedPack).GetChild(0).GetChild(selectedWorld).GetComponent<RectTransform>(), 
-				packsHolder.GetComponent<RectTransform>(), packsHolder.parent.GetComponent<ScrollRect>());
+            SnapTo(packsHolder.GetChild(selectedPack).GetChild(0).GetChild(selectedWorld).GetComponent<RectTransform>(),
+                packsHolder.GetComponent<RectTransform>(), packsHolder.parent.GetComponent<ScrollRect>());
+        }
+    }
 
-		}
-	}
+    public void SnapTo(RectTransform target, RectTransform contentPanel, ScrollRect scrollRect)
+    {
+        Canvas.ForceUpdateCanvases();
 
-	public void SnapTo(RectTransform target, RectTransform contentPanel, ScrollRect scrollRect)
-	{
-		Canvas.ForceUpdateCanvases();
+        contentPanel.anchoredPosition =
+            (Vector2)scrollRect.transform.InverseTransformPoint(contentPanel.position)
+            - (Vector2)scrollRect.transform.InverseTransformPoint(target.position);
+    }
 
-		contentPanel.anchoredPosition =
-			(Vector2)scrollRect.transform.InverseTransformPoint(contentPanel.position)
-			- (Vector2)scrollRect.transform.InverseTransformPoint(target.position);
-	}
-		
-	// Za selektovani svet setujemo parametre za levele
-	public void SetWorldLevels(int packIndex, int worldIndex)
-	{
-		string worldName = packs[packIndex].ChildNodes[worldIndex].Attributes["title"].Value;
+    // Za selektovani svet setujemo parametre za levele
+    public void SetWorldLevels(int packIndex, int worldIndex)
+    {
+        // Debug.Log("зАШЛИ");
+        string worldName = packs[packIndex].ChildNodes[worldIndex].Attributes["title"].Value;
 
-		// Pronalazimo objekat koji sadrzi packove
-		Transform packsHolder = GameObject.Find("LevelPacksHolder").transform;
+        // Pronalazimo objekat koji sadrzi packove
+        packsHolder = GameObject.Find("LevelPacksHolder").transform;
 
-		// Kreiramo jedan pack holder za sve levele osim ako nije vec kreiran
-		GameObject newPack;
-		if (packsHolder.childCount == 0)
-		{
-			newPack = Instantiate(packPrefab, packsHolder) as GameObject;
-			newPack.transform.localScale = Vector3.one;
-		}
-		else
-		{
-			newPack = packsHolder.GetChild(0).gameObject;
-		}
+        // Kreiramo jedan pack holder za sve levele osim ako nije vec kreiran
+        GameObject newPack;
 
-		// U odnosu na to da li smo vec kreirali tabove za level imamo x slucaja
-		// Ako nismo do sada kreirali tabove za levele - kreiramo ih sve za selektovani svet
-		if (packsHolder.GetChild(0).GetChild(0).childCount == 1)
-		{
-			// Kreiramo holdere za level
-			for (int i = 0; i < packs[packIndex].ChildNodes[worldIndex].ChildNodes.Count; i++)
-			{
-				// Kreiramo tab za svaki level iz selektovanog packa i sveta, takodje stavljamo i listener za pokretanje ovog levela
-				GameObject newLevel = Instantiate(levelPrefab, newPack.transform.GetChild(0).transform) as GameObject;
-				newLevel.transform.localScale = Vector3.one;
-				newLevel.name = "Level" + (i + 1).ToString();
+        if (packsHolder.childCount == 0)
+        {
+            newPack = Instantiate(packPrefab, packsHolder) as GameObject;
+            newPack.transform.localScale = Vector3.one;
 
-				// Proveravamo da li je pack poslednji otkljucani
-				if (selectedPack == lastUnlockedPack)
-				{
-					// Poslednji svet u ovom packu
-					if (selectedWorld == lastUnlockedWorld)
-					{
-						if (i >= lastUnlockedLevel) // Leveli koji nisu otkljucani
-						{
-							if (i > lastUnlockedLevel)
-							{
-								// Nije otkljucan, stavljamo transparenciju za ovaj tab
-								newLevel.GetComponent<CanvasGroup>().alpha = 0.3f;
-							}
+            Debug.Log("PACK " + newPack);
+        }
+        else
+        {
+            foreach (Transform child in packsHolder)
+            {
+                Destroy(child.gameObject);
+            }
 
-							// Stavljamo text da level nije predjen
-							newLevel.transform.Find("AnimationHolder/LevelSolvedText").GetComponent<Text>().text = "Not solved";
-						}
-						else if (i < lastUnlockedLevel) // Otkljucani
-						{
-							// Stavljamo text da je level predjen
-							newLevel.transform.Find("AnimationHolder/LevelSolvedText").GetComponent<Text>().text = "Solved";
-						}
-					}
-					else // Posto moze samo da se otvori svet koji je manji od trenutno otkljucanog onda sigurno stavljamo da je level predjen
-					{
-						// Stavljamo text da je level predjen
-						newLevel.transform.Find("AnimationHolder/LevelSolvedText").GetComponent<Text>().text = "Solved";
-					}
-				}
+            newPack = Instantiate(packPrefab, packsHolder) as GameObject;
+            newPack.transform.localScale = Vector3.one;
+        }
 
-				// Postavljamo ime nivoa
-				newLevel.transform.Find("AnimationHolder/LevelNumberName").GetComponent<Text>().text = "Level " + (i + 1).ToString();
+        // U odnosu na to da li smo vec kreirali tabove za level imamo x slucaja
+        // Ako nismo do sada kreirali tabove za levele - kreiramo ih sve za selektovani svet
 
-				// Setujemo event za klick na odabrani world
-				newLevel.transform.GetChild(1).GetComponent<WorldLevelScript>().levelIndex = i;
+        Debug.Log("Колличество " + packsHolder.GetChild(0).GetChild(0).childCount);
+        /*Debug.Log("Первое имя " + packsHolder.GetChild(0).gameObject.name);
+        Debug.Log("Второе  " + packsHolder.GetChild(0).GetChild(0).gameObject.name);*/
+
+        int complitedLevel = _levelProgressManager.LoadLevelProgress(packIndex, worldIndex);
+        bool hasProgress = complitedLevel > 0;
+        
+        Debug.Log("ПОЛУЧИЛИ " + complitedLevel);
+
+        for (int i = 0; i < packs[packIndex].ChildNodes[worldIndex].ChildNodes.Count; i++)
+        {
+            GameObject newLevel = Instantiate(levelPrefab, newPack.transform.GetChild(0).transform) as GameObject;
+            newLevel.transform.GetChild(1).GetComponent<WorldLevelScript>().levelIndex = i;
+            newLevel.transform.localScale = Vector3.one;
+            newLevel.name = "Level" + (i + 1).ToString();
+            newLevel.transform.Find("AnimationHolder/LevelNumberName").GetComponent<Text>().text =
+                "Level " + (i + 1).ToString();
+
+            if (hasProgress)
+            {
+                Debug.Log("TRUE Value ");
+                if (i <= complitedLevel)
+                {
+                    newLevel.GetComponent<CanvasGroup>().alpha = 1f;
+
+                    if (i < complitedLevel)
+                    {
+                        newLevel.transform.Find("AnimationHolder/LevelSolvedText").GetComponent<Text>().text = "Solved";
+                    }
+                    else
+                    {
+                        newLevel.transform.Find("AnimationHolder/LevelSolvedText").GetComponent<Text>().text =
+                            "Not Solved";
+                    }
+
+
+                    /*newLevel.GetComponent<CanvasGroup>().alpha = 1f;
+                    newLevel.transform.Find("AnimationHolder/LevelSolvedText").GetComponent<Text>().text = "Solved";*/
+                }
+                else
+                {
+                    
+                    newLevel.GetComponent<CanvasGroup>().alpha = 0.3f;
+                    newLevel.GetComponent<CanvasGroup>().interactable = false;
+                    newLevel.GetComponent<CanvasGroup>().blocksRaycasts = false;
+                    newLevel.transform.Find("AnimationHolder/LevelSolvedText").GetComponent<Text>().text = "Not Solved";
+                    // newLevel.transform
+                }
+            }
+            else
+            {
+                Debug.Log("Else Value ");
+                if (i == 0)
+                {
+                    newLevel.GetComponent<CanvasGroup>().alpha = 1f;
+                    newLevel.transform.Find("AnimationHolder/LevelSolvedText").GetComponent<Text>().text = "Not Solved";
+                }
+                else
+                {
+                    newLevel.GetComponent<CanvasGroup>().alpha = 0.3f;
+                    newLevel.GetComponent<CanvasGroup>().interactable = false;
+                    newLevel.GetComponent<CanvasGroup>().blocksRaycasts = false;
+                    newLevel.transform.Find("AnimationHolder/LevelSolvedText").GetComponent<Text>().text = "Not Solved";
+                }
+            }
+        }
+
+        return;
+
+
+        if (packsHolder.GetChild(0).GetChild(0).childCount == 1)
+        {
+            Debug.Log("IF ");
+
+            // Kreiramo holdere za level
+            for (int i = 0; i < packs[packIndex].ChildNodes[worldIndex].ChildNodes.Count; i++)
+            {
+                // Kreiramo tab za svaki level iz selektovanog packa i sveta, takodje stavljamo i listener za pokretanje ovog levela
+                GameObject newLevel = Instantiate(levelPrefab, newPack.transform.GetChild(0).transform) as GameObject;
+                newLevel.transform.localScale = Vector3.one;
+                newLevel.name = "Level" + (i + 1).ToString();
+
+                // Debug.Log("Index " + newLevel.name);
+
+                // Proveravamo da li je pack poslednji otkljucani
+                if (selectedPack == lastUnlockedPack)
+                {
+                    // Debug.Log("lastUnlockedPack  " + selectedPack);
+                    // Poslednji svet u ovom packu
+                    if (selectedWorld == lastUnlockedWorld)
+                    {
+                        // Debug.Log("lastUnlockedWorld " + selectedWorld);
+
+                        if (i >= lastUnlockedLevel) // Leveli koji nisu otkljucani
+                        {
+                            if (i > lastUnlockedLevel)
+                            {
+                                // Debug.Log(lastUnlockedLevel);
+                                // Nije otkljucan, stavljamo transparenciju za ovaj tab
+
+                                newLevel.GetComponent<CanvasGroup>().alpha = 0.3f;
+
+                                // Debug.Log("ВЫКЛЮЧАЕМ " + selectedWorld);
+
+                                PlayerPrefs.GetInt("Pack" + packIndex, 0);
+                                PlayerPrefs.GetInt("Pack" + packIndex, 0);
+                                PlayerPrefs.GetInt("Pack" + packIndex, 0);
+                            }
+
+                            // Debug.Log("NOT SOLVED");
+                            // Stavljamo text da level nije predjen
+                            newLevel.transform.Find("AnimationHolder/LevelSolvedText").GetComponent<Text>().text =
+                                "Not solved";
+                        }
+                        else if (i < lastUnlockedLevel) // Otkljucani
+                        {
+                            // Stavljamo text da je level predjen
+                            newLevel.transform.Find("AnimationHolder/LevelSolvedText").GetComponent<Text>().text =
+                                "Solved";
+                        }
+                    }
+                    else // Posto moze samo da se otvori svet koji je manji od trenutno otkljucanog onda sigurno stavljamo da je level predjen
+                    {
+                        // Stavljamo text da je level predjen
+                        newLevel.transform.Find("AnimationHolder/LevelSolvedText").GetComponent<Text>().text = "Solved";
+                    }
+                }
+
+                // Postavljamo ime nivoa
+                newLevel.transform.Find("AnimationHolder/LevelNumberName").GetComponent<Text>().text =
+                    "Level " + (i + 1).ToString();
+
+                // Setujemo event za klick na odabrani world
+                newLevel.transform.GetChild(1).GetComponent<WorldLevelScript>().levelIndex = i;
 
 //				// Ako je level trenutno izabrani level stavljamo i native ad odmah iza njega
 //				if (i == selectedLevel && !GlobalVariables.removeAdsOwned)
@@ -290,208 +405,279 @@ public class LevelsParser : MonoBehaviour {
 //					nativeAd.name = "NativeAdHolder";
 //					LevelSelectManager.levelSelectManager.listOfNativeAds.Add(nativeAd);
 //				}
-			}
-		}
-		else // Vec postoje tabovi za levele
-		{
-			// Prvo pronalazimo native ad i postavljamo ga kao poslednje dete
-			if (packsHolder.GetChild(0).GetChild(0).Find("NativeAdHolder") != null)
-			{
-				if (!GlobalVariables.removeAdsOwned)
-					packsHolder.GetChild(0).GetChild(0).Find("NativeAdHolder").SetAsLastSibling();
-				else
-					Destroy(packsHolder.GetChild(0).GetChild(0).Find("NativeAdHolder").gameObject);
-			}
+            }
+        }
+        else // Vec postoje tabovi za levele
+        {
+            Debug.Log("ELSE ");
+            // Prvo pronalazimo native ad i postavljamo ga kao poslednje dete
+            if (packsHolder.GetChild(0).GetChild(0).Find("NativeAdHolder") != null)
+            {
+                if (!GlobalVariables.removeAdsOwned)
+                    packsHolder.GetChild(0).GetChild(0).Find("NativeAdHolder").SetAsLastSibling();
+                else
+                    Destroy(packsHolder.GetChild(0).GetChild(0).Find("NativeAdHolder").gameObject);
+            }
 
-			// Za selektovani svet proveravamo u odnosu na broj tabova koje smo kreirali da li trebamo da dodamo neke ili da iskljucimo
-			if (packsHolder.GetChild(0).GetChild(0).childCount > packs[packIndex].ChildNodes[worldIndex].ChildNodes.Count + 1) // Ima vise tabova - 1 zbog title holdera
-			{
-				// Gasimo ostatak tabova
-				for (int i = packs[packIndex].ChildNodes[worldIndex].ChildNodes.Count + 1; i < packsHolder.GetChild(0).GetChild(0).childCount - 1; i++)
-				{
-					packsHolder.GetChild(0).GetChild(0).GetChild(i).gameObject.SetActive(false);	
-				}
-			}
-			else if (packsHolder.GetChild(0).GetChild(0).childCount < packs[packIndex].ChildNodes[worldIndex].ChildNodes.Count + 1)
-			{
-				// Kreiramo tabove koji nedostaju
-				for (int i = packsHolder.GetChild(0).GetChild(0).childCount; i < packs[packIndex].ChildNodes[worldIndex].ChildNodes.Count + 1; i ++)
-				{
-					GameObject newLevel = Instantiate(levelPrefab, newPack.transform.GetChild(0).transform) as GameObject;
-					newLevel.transform.localScale = Vector3.one;
-					newLevel.name = "Level" + (i + 1).ToString();
+            // Za selektovani svet proveravamo u odnosu na broj tabova koje smo kreirali da li trebamo da dodamo neke ili da iskljucimo
+            if (packsHolder.GetChild(0).GetChild(0).childCount >
+                packs[packIndex].ChildNodes[worldIndex].ChildNodes.Count + 1) // Ima vise tabova - 1 zbog title holdera
+            {
+                // Gasimo ostatak tabova
+                for (int i = packs[packIndex].ChildNodes[worldIndex].ChildNodes.Count + 1;
+                     i < packsHolder.GetChild(0).GetChild(0).childCount - 1;
+                     i++)
+                {
+                    packsHolder.GetChild(0).GetChild(0).GetChild(i).gameObject.SetActive(false);
+                }
+            }
+            else if (packsHolder.GetChild(0).GetChild(0).childCount <
+                     packs[packIndex].ChildNodes[worldIndex].ChildNodes.Count + 1)
+            {
+                // Kreiramo tabove koji nedostaju
+                for (int i = packsHolder.GetChild(0).GetChild(0).childCount;
+                     i < packs[packIndex].ChildNodes[worldIndex].ChildNodes.Count + 1;
+                     i++)
+                {
+                    GameObject newLevel =
+                        Instantiate(levelPrefab, newPack.transform.GetChild(0).transform) as GameObject;
+                    newLevel.transform.localScale = Vector3.one;
+                    newLevel.name = "Level" + (i + 1).ToString();
 
-					// Setujemo event za klick na odabrani world
-					newLevel.transform.GetChild(1).GetComponent<WorldLevelScript>().levelIndex = i;
-				}
-			}
+                    // Setujemo event za klick na odabrani world
+                    newLevel.transform.GetChild(1).GetComponent<WorldLevelScript>().levelIndex = i;
+                }
+            }
 
-			// Setujemo sve levele
-			for (int i = 0; i < packs[packIndex].ChildNodes[worldIndex].ChildNodes.Count; i++)
-			{
-				// Proveravamo da li je pack poslednji otkljucani
-				if (selectedPack == lastUnlockedPack)
-				{
-					// Poslednji svet u ovom packu
-					if (selectedWorld == lastUnlockedWorld)
-					{
-						if (i >= lastUnlockedLevel) // Leveli koji nisu otkljucani
-						{
-							if (i > lastUnlockedLevel)
-							{
-								// Nije otkljucan, stavljamo transparenciju za ovaj tab
-								packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).GetComponent<CanvasGroup>().alpha = 0.3f;
-							}
+            // Setujemo sve levele
+            for (int i = 0; i < packs[packIndex].ChildNodes[worldIndex].ChildNodes.Count; i++)
+            {
+                // Proveravamo da li je pack poslednji otkljucani
+                if (selectedPack == lastUnlockedPack)
+                {
+                    // Poslednji svet u ovom packu
+                    if (selectedWorld == lastUnlockedWorld)
+                    {
+                        if (i >= lastUnlockedLevel) // Leveli koji nisu otkljucani
+                        {
+                            if (i > lastUnlockedLevel)
+                            {
+                                Debug.Log("IF Alpha 0.3f   " +
+                                          packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).gameObject.name);
+                                packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).GetComponent<CanvasGroup>()
+                                    .alpha = 0.3f;
+                            }
 
-							// Stavljamo text da level nije predjen
-							packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).transform.Find("AnimationHolder/LevelSolvedText").GetComponent<Text>().text = "Not solved";
-						}
-						else if (i < lastUnlockedLevel) // Otkljucani
-						{
-							// Stavljamo text da je level predjen
-							packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).transform.Find("AnimationHolder/LevelSolvedText").GetComponent<Text>().text = "Solved";
-						}
-					}
-					else // Posto moze samo da se otvori svet koji je manji od trenutno otkljucanog onda sigurno stavljamo da je level predjen
-					{
-						// Stavljamo text da je level predjen
-						packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).transform.Find("AnimationHolder/LevelSolvedText").GetComponent<Text>().text = "Solved";
-					}
-				}
+                            Debug.Log("IF NOT SOLVED " +
+                                      packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).gameObject.name);
 
-				// Postavljamo ime nivoa
-				packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).transform.Find("AnimationHolder/LevelNumberName").GetComponent<Text>().text = "Level " + (i + 1).ToString();
+                            // Debug.Log("ЛОМАЕТСФЯ");
+                            // Stavljamo text da level nije predjen
+                            packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).transform
+                                .Find("AnimationHolder/LevelSolvedText").GetComponent<Text>().text = "Not solved";
+                        }
+                        else if (i < lastUnlockedLevel) // Otkljucani
+                        {
+                            Debug.Log("Else IF Solved " +
+                                      packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).gameObject.name);
+                            // Stavljamo text da je level predjen
+                            packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).transform
+                                .Find("AnimationHolder/LevelSolvedText").GetComponent<Text>().text = "Solved";
+                        }
+                    }
+                    else // Posto moze samo da se otvori svet koji je manji od trenutno otkljucanog onda sigurno stavljamo da je level predjen
+                    {
+                        // Stavljamo text da je level predjen
+                        Debug.Log("ELSE Solved Alpha 1" +
+                                  packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).gameObject.name);
+                        packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).transform
+                            .Find("AnimationHolder/LevelSolvedText").GetComponent<Text>().text = "Solved";
+                        packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).GetComponent<CanvasGroup>()
+                            .alpha = 1f;
+                    }
+                }
 
-				// Aktiviramo objekat za svaki slucaj
-				packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).gameObject.SetActive(true);
-			}
+                /*if (selectedPack == packIndex)
+                {
+                    if (selectedWorld == worldIndex)
+                    {
+                        if (_levelProgressManager.LoadLevelProgress(packIndex, worldIndex, i))
+                        {
+                            packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).GetComponent<CanvasGroup>()
+                                .alpha = 1f;
 
-			// Setujemo native iza poslednje izabranog nivoa
-			for (int i = selectedLevel + 1; i < packs[packIndex].ChildNodes[worldIndex].ChildNodes.Count; i++)
-			{
-				packsHolder.GetChild(0).GetChild(0).GetChild(selectedLevel + 2).SetAsLastSibling();
-			}
-		}
+                            packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).transform
+                                .Find("AnimationHolder/LevelSolvedText").GetComponent<Text>().text = "Solved";
+                            Debug.Log("TRU NAME"   + packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).gameObject.name);
+                        }
+                        else
+                        {
+                            packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).GetComponent<CanvasGroup>()
+                                .alpha = 0.3f;
+                            Debug.Log("ELSE NAME"   + packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).gameObject.name);
+                        }
+                    }
+                }*/
 
-		//Setujemo ime sveta
-		newPack.transform.Find("Tabs/TitleHolder").GetComponent<Text>().text = packs[packIndex].ChildNodes[worldIndex].Attributes["title"].Value;
+                // Postavljamo ime nivoa
+                packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).transform.Find("AnimationHolder/LevelNumberName")
+                    .GetComponent<Text>().text = "Level " + (i + 1).ToString();
 
-		newPack.GetComponent<RectTransform>().anchoredPosition3D = new Vector3(newPack.GetComponent<RectTransform>().anchoredPosition3D.x, newPack.GetComponent<RectTransform>().anchoredPosition3D.y, 0f);
+                // Aktiviramo objekat za svaki slucaj
+                packsHolder.GetChild(0).GetChild(0).GetChild(i + 1).gameObject.SetActive(true);
+            }
 
-		// Setujemo tabove nakon zavrsenog frejma
-		StartCoroutine(SetTabsAppropriately(packsHolder));
-	}
+            // Setujemo native iza poslednje izabranog nivoa
+            for (int i = selectedLevel + 1; i < packs[packIndex].ChildNodes[worldIndex].ChildNodes.Count; i++)
+            {
+                packsHolder.GetChild(0).GetChild(0).GetChild(selectedLevel + 2).SetAsLastSibling();
+            }
+        }
 
-	// TODO NAPOMENA za proveru da li je poslednji level u tom svetu, tj. da li treba da se poveca jedan na world
-	// Koristi se packs[indexPacka].ChildNodes[indexSveta].ChildNodes.Count  i proverava u odnosu na selected level
-	// kao i u odnosu na last unlocked level, pa ako je selected == last i plus je index selektovanog 
-	// levela == packs[indexPacka].ChildNodes[indexSveta].ChildNodes.Count - 1, tada povecavamo svet za 1 i proveravamo
-	// da li je to poslednji svet u packu, pa ako jeste povecavamo i poslednji pack
+        //Setujemo ime sveta
+        newPack.transform.Find("Tabs/TitleHolder").GetComponent<Text>().text =
+            packs[packIndex].ChildNodes[worldIndex].Attributes["title"].Value;
+
+        newPack.GetComponent<RectTransform>().anchoredPosition3D = new Vector3(
+            newPack.GetComponent<RectTransform>().anchoredPosition3D.x,
+            newPack.GetComponent<RectTransform>().anchoredPosition3D.y, 0f);
+
+        // Setujemo tabove nakon zavrsenog frejma
+        StartCoroutine(SetTabsAppropriately(packsHolder));
 
 
-	// Fukcija koja ce se stavljati na pokretanje sveta koja menja panel na level select i koja setuje levele za taj svet 
-	public void WorldSelected()
-	{
-		// Prikazujemo level select menu
-		LevelSelectManager.levelSelectManager.WorldSelected();
-	}
+        /*// LevelTab[] levelTabs = transform.GetComponentsInChildren<LevelTab>(true);
 
-	// Funkcija koja ce se stavljati za pokretanje levela
-	public void LevelSelected()
-	{
-		// Prikazivanje tranzicije i pokretanje level scene
-		LevelSelectManager.levelSelectManager.LevelSelected();
-	}
+        for (int i = 0; i < packs[packIndex].ChildNodes[worldIndex].ChildNodes.Count; i++)
+        {
+            // Debug.Log(levelTabs[i].gameObject.name);
 
-	// Funkcija koja vraca ponudjena slova za odabrani nivo
-	public void SetLevelParameters()
-	{
-		string letters = packs[selectedPack].ChildNodes[selectedWorld].ChildNodes[selectedLevel].SelectSingleNode("letters").InnerText;
-		string words = packs[selectedPack].ChildNodes[selectedWorld].ChildNodes[selectedLevel].SelectSingleNode("words").InnerXml;
-		string additionalWords = packs[selectedPack].ChildNodes[selectedWorld].ChildNodes[selectedLevel].SelectSingleNode("additional_words").InnerText;
-		string solvedWords = packs[selectedPack].ChildNodes[selectedWorld].ChildNodes[selectedLevel].SelectSingleNode("solved_words").InnerText;
+            Debug.Log(_levelProgressManager.LoadLevelProgress(packIndex, worldIndex, i));
+        }*/
+    }
 
-		GameplayManager.gameplayManager.offeredLetters.Clear();
-		GameplayManager.gameplayManager.targetWords.Clear();
-		GameplayManager.gameplayManager.additionalWords.Clear();
-		GameplayManager.gameplayManager.solvedWords.Clear();
+    // TODO NAPOMENA za proveru da li je poslednji level u tom svetu, tj. da li treba da se poveca jedan na world
+    // Koristi se packs[indexPacka].ChildNodes[indexSveta].ChildNodes.Count  i proverava u odnosu na selected level
+    // kao i u odnosu na last unlocked level, pa ako je selected == last i plus je index selektovanog 
+    // levela == packs[indexPacka].ChildNodes[indexSveta].ChildNodes.Count - 1, tada povecavamo svet za 1 i proveravamo
+    // da li je to poslednji svet u packu, pa ako jeste povecavamo i poslednji pack
 
-		if (packs[selectedPack].ChildNodes[selectedWorld].ChildNodes[selectedLevel].Attributes["bonus"].Value == "yes")
-			GameplayManager.isBonus = true;
 
-		GameplayManager.gameplayManager.offeredLetters = letters.Split(',').ToList();
+    // Fukcija koja ce se stavljati na pokretanje sveta koja menja panel na level select i koja setuje levele za taj svet 
+    public void WorldSelected()
+    {
+        // Prikazujemo level select menu
+        LevelSelectManager.levelSelectManager.WorldSelected();
+    }
 
-		// Ako je bonus level dodajemo i additional slovca
-		if (GameplayManager.isBonus)
-		{
-			GameplayManager.gameplayManager.offeredBonusLetters = packs[selectedPack].ChildNodes[selectedWorld].ChildNodes[selectedLevel].SelectSingleNode("additional_letters").InnerText.Split(',').ToList();
+    // Funkcija koja ce se stavljati za pokretanje levela
+    public void LevelSelected()
+    {
+        // Prikazivanje tranzicije i pokretanje level scene
+        LevelSelectManager.levelSelectManager.LevelSelected();
+    }
+
+    // Funkcija koja vraca ponudjena slova za odabrani nivo
+    public void SetLevelParameters()
+    {
+        string letters = packs[selectedPack].ChildNodes[selectedWorld].ChildNodes[selectedLevel]
+            .SelectSingleNode("letters").InnerText;
+        string words = packs[selectedPack].ChildNodes[selectedWorld].ChildNodes[selectedLevel].SelectSingleNode("words")
+            .InnerXml;
+        string additionalWords = packs[selectedPack].ChildNodes[selectedWorld].ChildNodes[selectedLevel]
+            .SelectSingleNode("additional_words").InnerText;
+        string solvedWords = packs[selectedPack].ChildNodes[selectedWorld].ChildNodes[selectedLevel]
+            .SelectSingleNode("solved_words").InnerText;
+
+        GameplayManager.gameplayManager.offeredLetters.Clear();
+        GameplayManager.gameplayManager.targetWords.Clear();
+        GameplayManager.gameplayManager.additionalWords.Clear();
+        GameplayManager.gameplayManager.solvedWords.Clear();
+
+        if (packs[selectedPack].ChildNodes[selectedWorld].ChildNodes[selectedLevel].Attributes["bonus"].Value == "yes")
+            GameplayManager.isBonus = true;
+
+        GameplayManager.gameplayManager.offeredLetters = letters.Split(',').ToList();
+
+        // Ako je bonus level dodajemo i additional slovca
+        if (GameplayManager.isBonus)
+        {
+            GameplayManager.gameplayManager.offeredBonusLetters = packs[selectedPack].ChildNodes[selectedWorld]
+                .ChildNodes[selectedLevel].SelectSingleNode("additional_letters").InnerText.Split(',').ToList();
 //			GameplayManager.gameplayManager.offeredLetters.AddRange(GameplayManager.gameplayManager.offeredBonusLetters);
-		}
+        }
 
-		GameplayManager.gameplayManager.targetWords = words.Split(',').ToList();
-		GameplayManager.gameplayManager.additionalWords = additionalWords.Split(',').ToList();
-		GameplayManager.gameplayManager.solvedWords = solvedWords.Split(',').ToList();
-	}
+        GameplayManager.gameplayManager.targetWords = words.Split(',').ToList();
+        GameplayManager.gameplayManager.additionalWords = additionalWords.Split(',').ToList();
+        GameplayManager.gameplayManager.solvedWords = solvedWords.Split(',').ToList();
+    }
 
-	// Proveravamo da li je poslednji otkljucani nivo zavrsen i ako jeste setujemo nove promenljive
-	public void CheckIfLastLevelWasFinished()
-	{
-		if (lastUnlockedPack == selectedPack && lastUnlockedWorld == selectedWorld && lastUnlockedLevel == selectedLevel)
-		{
-			// Proveravamo da li je poslednji u izabranom svetu
-			if (selectedLevel < packs[selectedPack].ChildNodes[selectedWorld].ChildNodes.Count - 1)
-			{
-				// Nije poslednji i samo povecavamo da je poslednji otkljucani nivo za jedan veci
-				lastUnlockedLevel += 1;
-				PlayerPrefs.SetInt("LastUnlockedLevel", lastUnlockedLevel);
-				PlayerPrefs.Save();
+    // Proveravamo da li je poslednji otkljucani nivo zavrsen i ako jeste setujemo nove promenljive
+    public void CheckIfLastLevelWasFinished()
+    {
+        if (lastUnlockedPack == selectedPack && lastUnlockedWorld == selectedWorld &&
+            lastUnlockedLevel == selectedLevel)
+        {
+            // Proveravamo da li je poslednji u izabranom svetu
+            if (selectedLevel < packs[selectedPack].ChildNodes[selectedWorld].ChildNodes.Count - 1)
+            {
+                // Nije poslednji i samo povecavamo da je poslednji otkljucani nivo za jedan veci
+                lastUnlockedLevel += 1;
+                PlayerPrefs.SetInt("LastUnlockedLevel", lastUnlockedLevel);
+                PlayerPrefs.Save();
 
-				Debug.Log("Level povecan");
-			}
-			else if (selectedWorld < packs[selectedPack].ChildNodes.Count - 1) // Level je poslednji, pa proveravamo da li je world poslednji
-			{
-				lastUnlockedLevel = 0;
-				lastUnlockedWorld += 1;
-				PlayerPrefs.SetInt("LastUnlockedLevel", lastUnlockedLevel);
-				PlayerPrefs.SetInt("LastUnlockedWorld", lastUnlockedWorld);
-				PlayerPrefs.Save();
-				Debug.Log("World povecan");
-			}
-			else if (lastUnlockedPack < packs.Count - 1) // Ovde proveravamo samo da li ima jos packova, ako ima otkljucavamo sledeci pack
-			{
-				lastUnlockedPack += 1;
-				lastUnlockedWorld = 0;
-				lastUnlockedLevel = 0;
-				PlayerPrefs.SetInt("LastUnlockedLevel", lastUnlockedLevel);
-				PlayerPrefs.SetInt("LastUnlockedWorld", lastUnlockedWorld);
-				PlayerPrefs.SetInt("LastUnlockedPack", lastUnlockedPack);
-				PlayerPrefs.Save();
-				Debug.Log("Pack povecan");
-			}
+                Debug.Log("Level povecan");
+            }
+            else if
+                (selectedWorld <
+                 packs[selectedPack].ChildNodes.Count -
+                 1) // Level je poslednji, pa proveravamo da li je world poslednji
+            {
+                lastUnlockedLevel = 0;
+                lastUnlockedWorld += 1;
+                PlayerPrefs.SetInt("LastUnlockedLevel", lastUnlockedLevel);
+                PlayerPrefs.SetInt("LastUnlockedWorld", lastUnlockedWorld);
+                PlayerPrefs.Save();
+                Debug.Log("World povecan");
+            }
+            else if
+                (lastUnlockedPack <
+                 packs.Count - 1) // Ovde proveravamo samo da li ima jos packova, ako ima otkljucavamo sledeci pack
+            {
+                lastUnlockedPack += 1;
+                lastUnlockedWorld = 0;
+                lastUnlockedLevel = 0;
+                PlayerPrefs.SetInt("LastUnlockedLevel", lastUnlockedLevel);
+                PlayerPrefs.SetInt("LastUnlockedWorld", lastUnlockedWorld);
+                PlayerPrefs.SetInt("LastUnlockedPack", lastUnlockedPack);
+                PlayerPrefs.Save();
+                Debug.Log("Pack povecan");
+            }
 
-			GlobalVariables.stars += GameplayManager.gameplayManager.targetWords.Count;
-			PlayerPrefs.SetInt("Stars", GlobalVariables.stars);
-			PlayerPrefs.Save();
-		}
-	}
+            GlobalVariables.stars += GameplayManager.gameplayManager.targetWords.Count;
+            PlayerPrefs.SetInt("Stars", GlobalVariables.stars);
+            PlayerPrefs.Save();
+        }
+    }
 
-	public void IncrementLastSelectedLevel()
-	{
-		// Ako ima jos nivoa u ovom svetu onda samo povecamo selektovani nivo za 1
-		if (selectedLevel < packs[selectedPack].ChildNodes[selectedWorld].ChildNodes.Count - 1)
-		{
-			selectedLevel++;
-		}
-		else if (selectedWorld < packs[selectedPack].ChildNodes.Count - 1) // Nema vise nivoa, moramo da predjemo na sledeci
-		{
-			selectedWorld++;
-			selectedLevel = 0;
-		}
-		else if (selectedPack < packs.Count - 1)
-		{
-			selectedPack++;
-			selectedWorld = 0;
-			selectedLevel = 0;
-		}
-	}
+    public void IncrementLastSelectedLevel()
+    {
+        // Ako ima jos nivoa u ovom svetu onda samo povecamo selektovani nivo za 1
+        if (selectedLevel < packs[selectedPack].ChildNodes[selectedWorld].ChildNodes.Count - 1)
+        {
+            selectedLevel++;
+        }
+        else if (selectedWorld <
+                 packs[selectedPack].ChildNodes.Count - 1) // Nema vise nivoa, moramo da predjemo na sledeci
+        {
+            selectedWorld++;
+            selectedLevel = 0;
+        }
+        else if (selectedPack < packs.Count - 1)
+        {
+            selectedPack++;
+            selectedWorld = 0;
+            selectedLevel = 0;
+        }
+    }
 }

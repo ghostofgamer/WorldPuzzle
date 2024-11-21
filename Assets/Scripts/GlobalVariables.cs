@@ -99,6 +99,7 @@ public class GlobalVariables : MonoBehaviour {
 	// Funkcija koju koristimo za dodavanje i oduzimanje novcica
 	public void AddCoins(int value)
 	{
+		Debug.Log("Coins " + coins);
 		coins += value;
 		PlayerPrefs.SetInt("Coins", coins);
 		PlayerPrefs.Save();

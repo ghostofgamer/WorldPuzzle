@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class WorldLevelScript : MonoBehaviour {
 
@@ -12,6 +10,13 @@ public class WorldLevelScript : MonoBehaviour {
 	{
 		LevelsParser.selectedPack = packIndex;
 		LevelsParser.selectedWorld = worldIndex;
+		LevelsParser.CurrentPack = packIndex;
+		
+		/*LevelsParser.CurrentPack = packIndex;
+		LevelsParser.CurrentWorld = worldIndex;*/
+		
+		/*LevelsParser.CurrentPack = packIndex;
+			LevelsParser*/
 
 		if (packIndex < LevelsParser.levelParser.lastUnlockedPack)
 		{

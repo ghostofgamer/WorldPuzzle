@@ -34,12 +34,14 @@ public class LevelSelectManager : MonoBehaviour {
 	void Awake()
 	{
 		RefreshStarsAndCoins();
-
+		// Debug.Log("Вначале ");
 		if (GlobalVariables.backFromGameplay)
 		{
+			// Debug.Log("ПРсото ");
 			// Ako smo dosli iz gameplay scene pustamo loading depart animaciju
 			if (GlobalVariables.playLoadingDepartAtTheBegining)
 			{
+				// Debug.Log("Level");
 				StartCoroutine("LoadingDepartCoroutine");
 			}
 		}
@@ -59,6 +61,7 @@ public class LevelSelectManager : MonoBehaviour {
 		// Dok ide loading depart funkcija aktiviramo svet sa levelima koje smo presli za sada
 		// Prikazujemo level select menu
 		menuManager.ShowMenu(levelSelectMenu);
+		Debug.Log("Loading Depart Coroutine Main Menu");
 		LevelsParser.levelParser.SetWorldLevels(LevelsParser.selectedPack, LevelsParser.selectedWorld);
 
 		loadingHolder.SetActive(true);
@@ -86,6 +89,7 @@ public class LevelSelectManager : MonoBehaviour {
 		// Prikazujemo level select menu
 		menuManager.ShowMenu(levelSelectMenu);
 
+		Debug.Log("PAck " + LevelsParser.selectedPack+" ?????? "+  " World " + LevelsParser.selectedWorld);
 		LevelsParser.levelParser.SetWorldLevels(LevelsParser.selectedPack, LevelsParser.selectedWorld);
 
 		yield return new WaitForSeconds(0.5f);
@@ -101,9 +105,14 @@ public class LevelSelectManager : MonoBehaviour {
 	public void ShowWorldSelectMenu()
 	{
 		if (!GlobalVariables.playLastLevel)
+		{
+			Debug.Log("FALSE___ ");
 			StartCoroutine("ShowWorldselectMenuCoroutine");
+		}
+			
 		else
 		{
+			Debug.Log("TRUE+++ ");
 			GlobalVariables.playLastLevel = false;
 
 			LevelsParser.selectedPack = LevelsParser.levelParser.lastUnlockedPack;

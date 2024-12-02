@@ -10,6 +10,7 @@ using UnityEngine.UI;
 
 public class LevelsParser : MonoBehaviour
 {
+    [SerializeField] private ScrollRect _levelHolder;
     [SerializeField] private LevelProgressManager _levelProgressManager;
 
     public Transform packsHolder;
@@ -247,6 +248,10 @@ public class LevelsParser : MonoBehaviour
             newPack.transform.localScale = Vector3.one;
 
             Debug.Log("PACK " + newPack);
+            
+            LevelHolder levelholder = FindObjectOfType<LevelHolder>();
+            ScrollRect _levelHolder = levelholder.GetComponent<ScrollRect>();
+            _levelHolder.content = newPack.GetComponent<PackNew>()._VerticalLayoutGroup;
         }
         else
         {
@@ -257,6 +262,10 @@ public class LevelsParser : MonoBehaviour
 
             newPack = Instantiate(packPrefab, packsHolder) as GameObject;
             newPack.transform.localScale = Vector3.one;
+            
+            LevelHolder levelholder = FindObjectOfType<LevelHolder>();
+            ScrollRect _levelHolder = levelholder.GetComponent<ScrollRect>();
+            _levelHolder.content = newPack.GetComponent<PackNew>()._VerticalLayoutGroup;
         }
 
         // U odnosu na to da li smo vec kreirali tabove za level imamo x slucaja
